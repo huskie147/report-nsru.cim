@@ -1,20 +1,277 @@
-name: Jekyll site CI
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Computer Repair System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url(https://cdn.discordapp.com/attachments/855119132546957382/1327168401218605066/Pngtreedark_green_background_and_yellow_1444974.jpg?ex=67821564&is=6780c3e4&hm=64223fa25efb832ff461c60471f2b41488d1274c9063bbaea8a6142cec729e3a&);
+            background-size: cover;
+            background-position: center;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            background: rgb(250, 255, 204);
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            margin-top: 20px;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            color: #555;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .status {
+            margin-top: 30px;
+            text-align: center;
+            color: #333;
+        }
+        .status-กำลังดำเนินการ {
+            color: red;
+            font-weight: bold;
+        }
+        .status-เสร็จสิ้น {
+            color: green;
+            font-weight: bold;
+        }
+        .repair-list {
+            margin-top: 30px;
+            border-top: 2px solid #ccc;
+            padding-top: 20px;
+        }
+        .repair-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .admin-container {
+            margin-top: 50px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            display: none;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+        th {
+            background-color: #f8f8f8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="https://cdn.discordapp.com/attachments/855119132546957382/1327177344657657936/b5fa54a6b7876b93.png?ex=67821db8&is=6780cc38&hm=69908aa087e6cd331bb906c5459d70fa249108542d664039faffd35f0d3bece0&" alt="Header Image" class="header-image">
+    
+        <form id="repair-form">
+            <label for="name">ชื่อ-นามสกุล</label>
+            <input type="text" id="name" name="name" placeholder="ชื่อพร้อมรหัสนักศึกษา" required>
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+            <label for="email">อิเมลส่วนตัวทางมหาลัยราชภัฏนครสวรรค์</label>
+            <input type="email" id="email" name="email" placeholder="email" required>
 
-jobs:
-  build:
+            <label for="problem">แจ้งรายละเอียด</label>
+            <textarea id="problem" name="problem" rows="5" placeholder="แจ้งปัญหาพร้อมระบุ ชั้น , ห้อง และอาการของอุปกรณ์" required></textarea>
 
-    runs-on: ubuntu-latest
+            <label for="image">แนบรูปภาพ (ถ้ามี)</label>
+            <input type="file" id="image" name="image" accept="image/*">
 
-    steps:
-    - uses: actions/checkout@v4
-    - name: Build the site in the jekyll/builder container
-      run: |
-        docker run \
-        -v ${{ github.workspace }}:/srv/jekyll -v ${{ github.workspace }}/_site:/srv/jekyll/_site \
-        jekyll/builder:latest /bin/bash -c "chmod -R 777 /srv/jekyll && jekyll build --future"
+            <button type="submit">ส่งข้อมูล</button>
+        </form>
+
+        <div class="status" id="status"></div>
+
+        <!-- ส่วนแสดงรายการคำร้อง -->
+        <div class="repair-list" id="repair-list">
+            <h2>รายการแจ้งซ่อมของคุณ</h2>
+            <div id="repair-items">
+                <!-- รายการคำร้องจะแสดงที่นี่ -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ส่วนสำหรับแอดมิน -->
+    <div class="container admin-container">
+        <h1>สำหรับผู้ดูแล</h1>
+        <form id="admin-login">
+            <label for="admin-email">Email ผู้ดูแล</label>
+            <input type="email" id="admin-email" placeholder="admin email" required>
+            <button type="button" id="admin-login-btn">เข้าสู่ระบบ</button>
+        </form>
+
+        <table id="admin-table">
+            <thead>
+                <tr>
+                    <th>ชื่อ</th>
+                    <th>Email</th>
+                    <th>รายละเอียดปัญหา</th>
+                    <th>เวลาที่แจ้งซ่อม</th>
+                    <th>สถานะ</th>
+                    <th>รูปภาพ</th> <!-- เพิ่มช่องนี้ -->
+                    <th>การดําเนินการ</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        const form = document.getElementById('repair-form');
+        const statusDiv = document.getElementById('status');
+        const repairItemsDiv = document.getElementById('repair-items');
+        const STORAGE_KEY = 'repair_reports';
+        const adminLoginBtn = document.getElementById('admin-login-btn');
+        const adminEmailInput = document.getElementById('admin-email');
+        const adminTable = document.getElementById('admin-table');
+        const adminTableBody = document.querySelector('#admin-table tbody');
+        const authorizedEmail = 'admin@repair.com';
+
+        let reports = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+        function saveReports() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+        }
+
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const problem = document.getElementById('problem').value;
+            const timestamp = new Date().toISOString();
+
+            // จัดการไฟล์รูปภาพ (ถ้ามี)
+            const imageFile = document.getElementById('image').files[0];
+            let imageUrl = null;
+
+            if (imageFile) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    imageUrl = reader.result; // ข้อมูล URL ของรูปภาพ
+                    saveReport(name, email, problem, timestamp, imageUrl); // บันทึกข้อมูลพร้อม URL ของรูปภาพ
+                };
+                reader.readAsDataURL(imageFile); // อ่านไฟล์เป็น Data URL
+            } else {
+                saveReport(name, email, problem, timestamp); // ถ้าไม่มีรูปภาพก็ส่งแค่ข้อความ
+            }
+        });
+
+        function saveReport(name, email, problem, timestamp, imageUrl = null) {
+            reports.push({ name, email, problem, timestamp, status: 'Pending', imageUrl });
+            saveReports();
+
+            // แสดงสถานะการแจ้งซ่อมให้ผู้ใช้
+            statusDiv.innerHTML = `<p>Thank you, ${name}! Your issue has been reported. The status is now: <span class="status-กำลังดำเนินการ">Pending</span></p>`;
+            form.reset();
+
+            updateRepairList();
+        }
+
+        function updateRepairList() {
+            repairItemsDiv.innerHTML = ''; // ล้างรายการเดิม
+
+            reports.forEach(report => {
+                const statusClass =
+                    report.status === 'กำลังดำเนินการ' ? 'status-กำลังดำเนินการ' :
+                    report.status === 'เสร็จสิ้น' ? 'status-เสร็จสิ้น' : 'status-pending';
+
+                const imageCell = report.imageUrl ? `<img src="${report.imageUrl}" alt="Report Image" style="width: 100px; height: auto; margin-bottom: 10px;">` : '';
+
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('repair-item');
+                itemDiv.innerHTML = `
+                    <p><strong>ชื่อ:</strong> ${report.name}</p>
+                    <p><strong>Email:</strong> ${report.email}</p>
+                    <p><strong>ปัญหา:</strong> ${report.problem}</p>
+                    <p><strong>สถานะ:</strong> <span class="${statusClass}">${report.status}</span></p>
+                    ${imageCell}
+                `;
+
+                repairItemsDiv.appendChild(itemDiv);
+            });
+        }
+
+        adminLoginBtn.addEventListener('click', () => {
+            const adminEmail = adminEmailInput.value;
+            if (adminEmail === authorizedEmail) {
+                adminTable.style.display = 'table';
+                updateAdminTable();
+            } else {
+                alert('Unauthorized email. Access denied.');
+            }
+        });
+
+        function updateAdminTable() {
+            adminTableBody.innerHTML = '';
+            reports.forEach((report, index) => {
+                const statusClass =
+                    report.status === 'กำลังดำเนินการ' ? 'status-กำลังดำเนินการ' :
+                    report.status === 'เสร็จสิ้น' ? 'status-เสร็จสิ้น' : '';
+
+                const imageCell = report.imageUrl ? `<img src="${report.imageUrl}" alt="Report Image" style="width: 100px; height: auto; margin-bottom: 10px;">` : 'ไม่มีรูปภาพ';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${report.name}</td>
+                    <td>${report.email}</td>
+                    <td>${report.problem}</td>
+                    <td>${new Date(report.timestamp).toLocaleString()}</td>
+                    <td class="${statusClass}">${report.status}</td>
+                    <td>${imageCell}</td> <!-- เพิ่มช่องรูปภาพ -->
+                    <td>
+                        <button class="btn-in-progress" onclick="updateStatus(${index}, 'กำลังดำเนินการ')">กำลังดำเนินการ</button>
+                        <button class="btn-completed" onclick="updateStatus(${index}, 'เสร็จสิ้น')">เสร็จสิ้น</button>
+                    </td>
+                `;
+                adminTableBody.appendChild(row);
+            });
+        }
+
+        function updateStatus(index, status) {
+            reports[index].status = status;
+            saveReports();
+            updateAdminTable();
+        }
+
+        // เรียกใช้ฟังก์ชัน updateRepairList ตอนโหลดหน้า
+        updateRepairList();
+    </script>
+</body>
+</html>
